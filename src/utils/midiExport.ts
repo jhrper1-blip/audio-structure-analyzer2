@@ -1,7 +1,4 @@
 import MidiWriter from 'midi-writer-js';
-import JSZip from 'jszip';
-
-// -------------------- Types --------------------
 
 export interface StructureSection {
   label: string;
@@ -14,50 +11,67 @@ export interface AnalysisResult {
   structure: StructureSection[];
 }
 
-// -------------------- Basic MIDI Export --------------------
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
 
-export function createMidiFile(result: AnalysisResult): Blob {
+function createInstrumentTrack(name: string, tempo: number, structure: StructureSection[], channel: number) {
   const track = new MidiWriter.Track();
-  track.setTempo(result.tempo);
+  track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 1, channel }));
+  const ticksPerSecond = (480 * tempo) / 60;
+
+  structure.forEach((section, i) => {
+    const startTicks = Math.round(section.start_time * ticksPerSecond);
+    const noteDuration = '1'; // Placeholder for demo
+    track.addEvent(
+      new MidiWriter.NoteEvent({
+        pitch: ['C4'],
+        duration: noteDuration,
+        startTick: startTicks,
+        channel,
+        velocity: 70,
+      })
+    );
+  });
+
+  return track;
+}
+
+function createMarkerTrack(tempo: number, structure: StructureSection[]) {
+  const track = new MidiWriter.Track();
+  track.setTempo(tempo);
   track.setTimeSignature(4, 4);
 
-  const ticksPerSecond = (480 * result.tempo) / 60;
+  const ticksPerSecond = (480 * tempo) / 60;
 
-  result.structure.forEach((section, index) => {
+  structure.forEach((section, index) => {
     const startTicks = Math.round(section.start_time * ticksPerSecond);
 
     track.addEvent(
-      new MidiWriter.MetaEvent({
-        type: 'marker',
-        data: `${section.label} (${formatTime(section.start_time)})`,
-        tick: startTicks,
-      })
-    );
-
-    track.addEvent(
-      new MidiWriter.MetaEvent({
-        type: 'text',
-        data: `Section ${index + 1}: ${section.label} - Duration: ${formatTime(
-          section.end_time - section.start_time
-        )}`,
+      new MidiWriter.TextEvent({
+        text: `${section.label} (${formatTime(section.start_time)})`,
         tick: startTicks,
       })
     );
   });
 
-  const last = result.structure[result.structure.length - 1];
-  const endTicks = Math.round(last.end_time * ticksPerSecond);
+  return track;
+}
 
-  track.addEvent(
-    new MidiWriter.MetaEvent({
-      type: 'marker',
-      data: `End (${formatTime(last.end_time)})`,
-      tick: endTicks,
-    })
-  );
+export function createMidiTemplate(result: AnalysisResult): Blob {
+  const markerTrack = createMarkerTrack(result.tempo, result.structure);
 
-  const write = new MidiWriter.Writer(track);
-  const midiData = write.buildFile();
+  const instrumentTracks = [
+    createInstrumentTrack('Drums', result.tempo, result.structure, 9),
+    createInstrumentTrack('Bass', result.tempo, result.structure, 1),
+    createInstrumentTrack('Synth', result.tempo, result.structure, 2),
+    createInstrumentTrack('Keys', result.tempo, result.structure, 3),
+  ];
+
+  const writer = new MidiWriter.Writer([markerTrack, ...instrumentTracks]);
+  const midiData = writer.buildFile();
   const uint8Array = new Uint8Array(midiData);
 
   return new Blob([uint8Array], { type: 'audio/midi' });
@@ -65,64 +79,18 @@ export function createMidiFile(result: AnalysisResult): Blob {
 
 export function downloadMidiFile(result: AnalysisResult, originalFilename: string): void {
   try {
-    const midiBlob = createMidiFile(result);
+    const midiBlob = createMidiTemplate(result);
     const url = URL.createObjectURL(midiBlob);
     const link = document.createElement('a');
-
     const baseName = originalFilename.replace(/\.[^/.]+$/, '');
     link.href = url;
-    link.download = `${baseName}_structure_markers.mid`;
+    link.download = `${baseName}_ableton_template.mid`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error('❌ MIDI export failed:', error);
-    throw new Error('Failed to export MIDI file. Please try again.');
+    throw new Error('Failed to export MIDI template.');
   }
-}
-
-// -------------------- Ableton Template ZIP Export --------------------
-
-export async function exportAbletonTemplateZip(result: AnalysisResult, filename: string): Promise<void> {
-  const zip = new JSZip();
-  const baseName = filename.replace(/\.[^/.]+$/, '');
-  const folder = zip.folder(baseName) || zip;
-
-  // Add structure markers MIDI file
-  const midiBlob = createMidiFile(result);
-  folder.file('structure_markers.mid', midiBlob);
-
-  // Add dummy instrument placeholder MIDI files
-  const instruments = ['Drums', 'Bass', 'Synth', 'Keys', 'FX'];
-  instruments.forEach((name) => {
-    const track = new MidiWriter.Track();
-    track.setTempo(result.tempo);
-    const dummyNote = new MidiWriter.NoteEvent({
-      pitch: ['C4'],
-      duration: '4',
-    });
-    track.addEvent(dummyNote);
-    const writer = new MidiWriter.Writer([track]);
-    folder.file(`${name}.mid`, writer.buildFile());
-  });
-
-  // Create and trigger download
-  const content = await zip.generateAsync({ type: 'blob' });
-  const zipUrl = URL.createObjectURL(content);
-  const link = document.createElement('a');
-  link.href = zipUrl;
-  link.download = `${baseName}_ableton_template.zip`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(zipUrl);
-}
-
-// -------------------- Helpers --------------------
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
