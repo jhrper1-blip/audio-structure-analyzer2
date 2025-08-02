@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, FileAudio, AlertCircle, Music, Loader2 } from 'lucide-react';
+import { Upload, FileAudio, AlertCircle } from 'lucide-react';
 
 interface FileUploadProps {
   selectedFile: File | null;
@@ -26,7 +26,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 mb-8 border border-white/20 shadow-2xl">
-      {/* Drag & Drop Upload */}
       <div
         className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer ${
           dragActive
@@ -76,34 +75,32 @@ const FileUpload: React.FC<FileUploadProps> = ({
         />
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="mt-6 flex items-center space-x-3 text-red-400 bg-red-400/10 rounded-xl p-4 border border-red-400/20">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <p>{error}</p>
-        </div>
-      )}
-
-      {/* Analyze Button */}
       {selectedFile && (
-        <div className="mt-8 text-center">
+        <div className="text-center mt-6">
           <button
             onClick={onAnalyze}
             disabled={isAnalyzing}
-            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
+            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
           >
             {isAnalyzing ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Analyzing Audio...</span>
+                <span className="animate-spin">⏳</span>
+                <span>Analyzing...</span>
               </>
             ) : (
               <>
-                <Music className="w-5 h-5" />
+                <span>🎵</span>
                 <span>Analyze Structure</span>
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-6 flex items-center space-x-3 text-red-400 bg-red-400/10 rounded-xl p-4 border border-red-400/20">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p>{error}</p>
         </div>
       )}
     </div>
