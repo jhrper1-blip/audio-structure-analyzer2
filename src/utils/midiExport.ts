@@ -11,86 +11,75 @@ export interface AnalysisResult {
   structure: StructureSection[];
 }
 
+/**
+ * Utility: format seconds into mm:ss
+ */
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function createInstrumentTrack(name: string, tempo: number, structure: StructureSection[], channel: number) {
+/**
+ * Creates a MIDI file with marker events for each section.
+ * Optionally adds a track label (for Ableton exports).
+ */
+export function createMidiTemplate(result: AnalysisResult, trackLabel?: string): Blob {
   const track = new MidiWriter.Track();
-  track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 1, channel }));
-  const ticksPerSecond = (480 * tempo) / 60;
-
-  structure.forEach((section, i) => {
-    const startTicks = Math.round(section.start_time * ticksPerSecond);
-    const noteDuration = '1'; // Placeholder for demo
-    track.addEvent(
-      new MidiWriter.NoteEvent({
-        pitch: ['C4'],
-        duration: noteDuration,
-        startTick: startTicks,
-        channel,
-        velocity: 70,
-      })
-    );
-  });
-
-  return track;
-}
-
-function createMarkerTrack(tempo: number, structure: StructureSection[]) {
-  const track = new MidiWriter.Track();
-  track.setTempo(tempo);
+  track.setTempo(result.tempo);
   track.setTimeSignature(4, 4);
 
-  const ticksPerSecond = (480 * tempo) / 60;
+  const ticksPerSecond = (480 * result.tempo) / 60;
 
-  structure.forEach((section, index) => {
+  result.structure.forEach((section, index) => {
     const startTicks = Math.round(section.start_time * ticksPerSecond);
+    const label = trackLabel ? `${trackLabel}: ${section.label}` : section.label;
 
-    track.addEvent(
-      new MidiWriter.TextEvent({
-        text: `${section.label} (${formatTime(section.start_time)})`,
-        tick: startTicks,
-      })
-    );
+    track.addEvent(new MidiWriter.MetaEvent({
+      type: 'marker',
+      data: `${label} (${formatTime(section.start_time)})`,
+      tick: startTicks
+    }));
+
+    track.addEvent(new MidiWriter.MetaEvent({
+      type: 'text',
+      data: `Section ${index + 1}: ${label} - Duration: ${formatTime(section.end_time - section.start_time)}`,
+      tick: startTicks
+    }));
   });
 
-  return track;
+  const last = result.structure[result.structure.length - 1];
+  const endTicks = Math.round(last.end_time * ticksPerSecond);
+
+  track.addEvent(new MidiWriter.MetaEvent({
+    type: 'marker',
+    data: `End (${formatTime(last.end_time)})`,
+    tick: endTicks
+  }));
+
+  const writer = new MidiWriter.Writer([track]);
+  return new Blob([new Uint8Array(writer.buildFile())], { type: 'audio/midi' });
 }
 
-export function createMidiTemplate(result: AnalysisResult): Blob {
-  const markerTrack = createMarkerTrack(result.tempo, result.structure);
-
-  const instrumentTracks = [
-    createInstrumentTrack('Drums', result.tempo, result.structure, 9),
-    createInstrumentTrack('Bass', result.tempo, result.structure, 1),
-    createInstrumentTrack('Synth', result.tempo, result.structure, 2),
-    createInstrumentTrack('Keys', result.tempo, result.structure, 3),
-  ];
-
-  const writer = new MidiWriter.Writer([markerTrack, ...instrumentTracks]);
-  const midiData = writer.buildFile();
-  const uint8Array = new Uint8Array(midiData);
-
-  return new Blob([uint8Array], { type: 'audio/midi' });
-}
-
+/**
+ * Triggers a download of a single structure MIDI file
+ */
 export function downloadMidiFile(result: AnalysisResult, originalFilename: string): void {
   try {
     const midiBlob = createMidiTemplate(result);
     const url = URL.createObjectURL(midiBlob);
     const link = document.createElement('a');
+
     const baseName = originalFilename.replace(/\.[^/.]+$/, '');
     link.href = url;
-    link.download = `${baseName}_ableton_template.mid`;
+    link.download = `${baseName}_structure_markers.mid`;
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error('❌ MIDI export failed:', error);
-    throw new Error('Failed to export MIDI template.');
+    throw new Error('Failed to export MIDI file.');
   }
 }
