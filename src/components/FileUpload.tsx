@@ -101,13 +101,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 <span>Analyzing...</span>
               </>
             ) : (
-              <>
-                <Music className="w-5 h-5" />
-                <span>Analyze Structure</span>
-              </>
-            )}
-          </button>
-        </div>
+          
       )}
     </div>
   );
