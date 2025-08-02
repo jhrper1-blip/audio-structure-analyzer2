@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import AnalysisResults from './components/AnalysisResults';
 import InfoBanner from './components/InfoBanner';
-import { downloadMidiFile, loadMidiWriter } from './utils/midiExport';
+import { downloadMidiFile } from './utils/midiExport';
+
 import type { AnalysisResult } from './types';
 
 function App() {
@@ -11,19 +12,6 @@ function App() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [midiLibLoaded, setMidiLibLoaded] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-
-  useEffect(() => {
-  loadMidiWriter()
-    .then(() => {
-      setMidiLibLoaded(true);
-      console.log('✅ MIDI Writer loaded!');
-    })
-    .catch((err) => {
-      console.warn('❌ MIDI export unavailable:', err);
-    });
-}, []);
 
   const handleFileSelect = useCallback((file: File) => {
     const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg'];
@@ -36,32 +24,6 @@ function App() {
     }
   }, []);
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  }, [handleFileSelect]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-  }, []);
-
   const analyzeAudio = async () => {
     if (!selectedFile) return;
 
@@ -69,7 +31,9 @@ function App() {
     setError(null);
 
     try {
+      // Simulate API processing
       await new Promise(resolve => setTimeout(resolve, 3000));
+
       const mockResult: AnalysisResult = {
         tempo: Math.floor(Math.random() * 60) + 100,
         structure: [
@@ -81,6 +45,7 @@ function App() {
           { label: 'Outro', start_time: 137.8, end_time: 168.5 }
         ]
       };
+
       setResult(mockResult);
     } catch {
       setError('Analysis failed. Please try again.');
@@ -119,40 +84,16 @@ function App() {
 
         <FileUpload
           selectedFile={selectedFile}
-          dragActive={dragActive}
           error={error}
-          onFileInput={handleFileInput}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
+          onFileSelect={handleFileSelect}
+          onAnalyze={analyzeAudio}
+          isAnalyzing={isAnalyzing}
         />
-
-        {selectedFile && (
-          <div className="mt-8 text-center">
-            <button
-              onClick={analyzeAudio}
-              disabled={isAnalyzing}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
-            >
-              {isAnalyzing ? (
-                <>
-                  <span className="loader mr-2"></span>
-                  <span>Analyzing Audio...</span>
-                </>
-              ) : (
-                <>
-                  <span>Analyze Structure</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
 
         {result && (
           <AnalysisResults
             result={result}
             isExporting={isExporting}
-            midiLibLoaded={midiLibLoaded}
             onExport={handleMidiExport}
           />
         )}
