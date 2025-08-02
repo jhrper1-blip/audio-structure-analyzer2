@@ -33,6 +33,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
           <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl">
@@ -62,6 +63,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         )}
       </div>
 
+      {/* Export Notice */}
       {midiLibLoaded && (
         <div className="mb-6 bg-purple-500/10 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20">
           <div className="flex items-start space-x-3">
@@ -76,6 +78,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       )}
 
+      {/* Tempo Display */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl p-6 border border-orange-500/30">
           <div className="flex items-center space-x-4">
@@ -90,6 +93,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
+      {/* Song Structure Sections */}
       <div>
         <h3 className="text-xl font-semibold text-white mb-6 flex items-center space-x-2">
           <span>Song Structure</span>
@@ -100,7 +104,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           {result.structure.map((section, index) => (
             <div
               key={index}
-              className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl p-6 border border-slate-600/50 hover:border-blue-400/50 transition-all duration-300 hover:transform hover:scale-[1.02]"
+              className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-2xl p-6 border border-slate-600/50 hover:border-blue-400/50 transition-all duration-300 hover:scale-[1.02]"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
