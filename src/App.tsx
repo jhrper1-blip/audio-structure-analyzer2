@@ -1,9 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import AnalysisResults from './components/AnalysisResults';
 import InfoBanner from './components/InfoBanner';
 import { downloadMidiFile } from './utils/midiExport';
-
 import type { AnalysisResult } from './types';
 
 function App() {
@@ -12,6 +11,7 @@ function App() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   const handleFileSelect = useCallback((file: File) => {
     const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg'];
@@ -24,6 +24,32 @@ function App() {
     }
   }, []);
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
   const analyzeAudio = async () => {
     if (!selectedFile) return;
 
@@ -31,9 +57,10 @@ function App() {
     setError(null);
 
     try {
-      // Simulate API processing
+      // Simulated processing delay
       await new Promise(resolve => setTimeout(resolve, 3000));
 
+      // Simulated analysis output
       const mockResult: AnalysisResult = {
         tempo: Math.floor(Math.random() * 60) + 100,
         structure: [
@@ -85,7 +112,12 @@ function App() {
         <FileUpload
           selectedFile={selectedFile}
           error={error}
+          dragActive={dragActive}
           onFileSelect={handleFileSelect}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onFileInput={handleFileInput}
           onAnalyze={analyzeAudio}
           isAnalyzing={isAnalyzing}
         />
