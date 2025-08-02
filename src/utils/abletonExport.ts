@@ -1,3 +1,4 @@
+// src/utils/abletonExport.ts
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import MidiWriter from 'midi-writer-js';
@@ -10,46 +11,69 @@ function formatTime(seconds: number): string {
 }
 
 function generateStructureMarkerMIDI(result: AnalysisResult): Uint8Array {
+  try {
+    const track = new MidiWriter.Track();
+    const ticksPerSecond = (480 * result.tempo) / 60;
+
+    result.structure.forEach((section, index) => {
+      const startTicks = Math.round(section.start_time * ticksPerSecond);
+
+      track.addEvent(new MidiWriter.MetaEvent({
+        type: 'marker',
+        data: `${section.label} (${formatTime(section.start_time)})`,
+        tick: startTicks
+      }));
+
+      track.addEvent(new MidiWriter.MetaEvent({
+        type: 'text',
+        data: `Section ${index + 1}: ${section.label}`,
+        tick: startTicks
+      }));
+    });
+
+    const writer = new MidiWriter.Writer(track);
+    return new Uint8Array(writer.buildFile());
+  } catch (err) {
+    console.error('🎵 Error creating structure MIDI:', err);
+    throw err;
+  }
+}
+
+function generateDummyTrack(label: string): Uint8Array {
   const track = new MidiWriter.Track();
-  const ticksPerSecond = (480 * result.tempo) / 60;
+  track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 1 }));
 
-  result.structure.forEach((section, index) => {
-    const startTicks = Math.round(section.start_time * ticksPerSecond);
+  // Add a placeholder note
+  track.addEvent(new MidiWriter.NoteEvent({
+    pitch: ['C4'],
+    duration: '4',
+    startTick: 0,
+  }));
 
-    track.addEvent(new MidiWriter.MetaEvent({
-      type: 'marker',
-      data: `${section.label} (${formatTime(section.start_time)})`,
-      tick: startTicks
-    }));
-
-    track.addEvent(new MidiWriter.MetaEvent({
-      type: 'text',
-      data: `Section ${index + 1}: ${section.label}`,
-      tick: startTicks
-    }));
-  });
-
-  const write = new MidiWriter.Writer(track);
-  const midiData = write.buildFile();
-  return new Uint8Array(midiData);
+  const writer = new MidiWriter.Writer(track);
+  return new Uint8Array(writer.buildFile());
 }
 
 export async function exportAbletonTemplateZip(result: AnalysisResult, filename: string) {
-  const zip = new JSZip();
-  const baseName = filename.replace(/\.[^/.]+$/, '');
+  try {
+    const zip = new JSZip();
+    const baseName = filename.replace(/\.[^/.]+$/, '');
 
-  // Generate the structure marker MIDI file
-  const markerMidi = generateStructureMarkerMIDI(result);
-  zip.file(`${baseName}_structure_markers.mid`, markerMidi, { binary: true });
+    // Add structure markers MIDI
+    const structureMidi = generateStructureMarkerMIDI(result);
+    zip.file(`${baseName}_structure_markers.mid`, structureMidi, { binary: true });
 
-  // Simulate placeholder tracks
-  const dummyMidi = new Uint8Array([77, 84, 104, 100, 0, 0, 0, 6]); // 'MThd' header chunk
+    // Add dummy tracks
+    const tracks = ['drums', 'bass', 'keys', 'synth'];
+    tracks.forEach((trackName) => {
+      const midiData = generateDummyTrack(trackName);
+      zip.file(`${trackName}.mid`, midiData, { binary: true });
+    });
 
-  zip.file('drums.mid', dummyMidi);
-  zip.file('bass.mid', dummyMidi);
-  zip.file('keys.mid', dummyMidi);
-  zip.file('synth.mid', dummyMidi);
-
-  const content = await zip.generateAsync({ type: 'blob' });
-  saveAs(content, `${baseName}_ableton_template.zip`);
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `${baseName}_ableton_template.zip`);
+  } catch (err) {
+    console.error('❌ Failed to export Ableton ZIP:', err);
+    throw new Error('Export failed.');
+  }
 }
