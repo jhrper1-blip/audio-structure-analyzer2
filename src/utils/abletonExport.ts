@@ -1,79 +1,49 @@
-// src/utils/abletonExport.ts
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import MidiWriter from 'midi-writer-js';
+import { createMidiTemplate } from './midiExport';
 import type { AnalysisResult } from './midiExport';
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+/**
+ * Generate multiple instrument MIDI blobs based on the song structure
+ */
+function generateInstrumentTracks(result: AnalysisResult): Record<string, Blob> {
+  const instruments = ['Drums', 'Bass', 'Keys', 'Synth', 'FX'];
+
+  const blobs: Record<string, Blob> = {};
+
+  instruments.forEach((instrument) => {
+    const midiBlob = createMidiTemplate(result, instrument);
+    blobs[`${instrument}_Markers.mid`] = midiBlob;
+  });
+
+  return blobs;
 }
 
-function generateStructureMarkerMIDI(result: AnalysisResult): Uint8Array {
-  try {
-    const track = new MidiWriter.Track();
-    const ticksPerSecond = (480 * result.tempo) / 60;
-
-    result.structure.forEach((section, index) => {
-      const startTicks = Math.round(section.start_time * ticksPerSecond);
-
-      track.addEvent(new MidiWriter.MetaEvent({
-        type: 'marker',
-        data: `${section.label} (${formatTime(section.start_time)})`,
-        tick: startTicks
-      }));
-
-      track.addEvent(new MidiWriter.MetaEvent({
-        type: 'text',
-        data: `Section ${index + 1}: ${section.label}`,
-        tick: startTicks
-      }));
-    });
-
-    const writer = new MidiWriter.Writer(track);
-    return new Uint8Array(writer.buildFile());
-  } catch (err) {
-    console.error('🎵 Error creating structure MIDI:', err);
-    throw err;
-  }
-}
-
-function generateDummyTrack(label: string): Uint8Array {
-  const track = new MidiWriter.Track();
-  track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 1 }));
-
-  // Add a placeholder note
-  track.addEvent(new MidiWriter.NoteEvent({
-    pitch: ['C4'],
-    duration: '4',
-    startTick: 0,
-  }));
-
-  const writer = new MidiWriter.Writer(track);
-  return new Uint8Array(writer.buildFile());
-}
-
-export async function exportAbletonTemplateZip(result: AnalysisResult, filename: string) {
+/**
+ * Export a structured Ableton-style project template ZIP
+ */
+export async function exportAbletonTemplateZip(result: AnalysisResult, originalFilename: string): Promise<void> {
   try {
     const zip = new JSZip();
-    const baseName = filename.replace(/\.[^/.]+$/, '');
 
-    // Add structure markers MIDI
-    const structureMidi = generateStructureMarkerMIDI(result);
-    zip.file(`${baseName}_structure_markers.mid`, structureMidi, { binary: true });
-
-    // Add dummy tracks
-    const tracks = ['drums', 'bass', 'keys', 'synth'];
-    tracks.forEach((trackName) => {
-      const midiData = generateDummyTrack(trackName);
-      zip.file(`${trackName}.mid`, midiData, { binary: true });
+    // Add instrument marker MIDI files
+    const midiFiles = generateInstrumentTracks(result);
+    Object.entries(midiFiles).forEach(([filename, blob]) => {
+      zip.file(`midi/${filename}`, blob);
     });
 
-    const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `${baseName}_ableton_template.zip`);
-  } catch (err) {
-    console.error('❌ Failed to export Ableton ZIP:', err);
-    throw new Error('Export failed.');
+    // Add a readme or project info
+    const baseName = originalFilename.replace(/\.[^/.]+$/, '');
+    zip.file('README.txt', `Ableton Template for: ${baseName}\n\nIncludes tempo and section markers for each instrument track.\nTempo: ${result.tempo} BPM\nSections:\n${result.structure.map(s => `- ${s.label} (${s.start_time}s to ${s.end_time}s)`).join('\n')}`);
+
+    // Generate ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+    // Trigger download
+    const filename = `${baseName}_Ableton_Template.zip`;
+    saveAs(zipBlob, filename);
+  } catch (error) {
+    console.error('❌ Failed to export Ableton template:', error);
+    throw new Error('Failed to export Ableton template.');
   }
 }
