@@ -15,14 +15,12 @@ interface AnalysisResult {
 interface AnalysisResultsProps {
   result: AnalysisResult;
   isExporting: boolean;
-  midiLibLoaded: boolean;
   onExport: () => void;
 }
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   result,
   isExporting,
-  midiLibLoaded,
   onExport
 }) => {
   const formatTime = (seconds: number): string => {
@@ -42,41 +40,37 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <span>Analysis Results</span>
         </h2>
 
-        {midiLibLoaded && (
-          <button
-            onClick={onExport}
-            disabled={isExporting}
-            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Exporting...</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                <span>Export MIDI</span>
-              </>
-            )}
-          </button>
-        )}
+        <button
+          onClick={onExport}
+          disabled={isExporting}
+          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed flex items-center space-x-2"
+        >
+          {isExporting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Exporting...</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              <span>Export MIDI</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Export Notice */}
-      {midiLibLoaded && (
-        <div className="mb-6 bg-purple-500/10 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20">
-          <div className="flex items-start space-x-3">
-            <div className="p-1 bg-purple-500 rounded-lg flex-shrink-0">
-              <Download className="w-4 h-4 text-white" />
-            </div>
-            <div className="text-sm text-purple-200">
-              <p className="font-semibold mb-1">MIDI Export Available</p>
-              <p>Download structural markers as a MIDI file for use in your DAW or music software.</p>
-            </div>
+      <div className="mb-6 bg-purple-500/10 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20">
+        <div className="flex items-start space-x-3">
+          <div className="p-1 bg-purple-500 rounded-lg flex-shrink-0">
+            <Download className="w-4 h-4 text-white" />
+          </div>
+          <div className="text-sm text-purple-200">
+            <p className="font-semibold mb-1">MIDI Export Available</p>
+            <p>Download structural markers as a MIDI file for use in your DAW or music software.</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Tempo Display */}
       <div className="mb-8">
