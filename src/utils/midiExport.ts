@@ -1,3 +1,5 @@
+import MidiWriter from 'midi-writer-js';
+
 export interface StructureSection {
   label: string;
   start_time: number;
@@ -9,40 +11,7 @@ export interface AnalysisResult {
   structure: StructureSection[];
 }
 
-/**
- * Dynamically loads the MIDI Writer library from CDN
- */
-export function loadMidiWriter(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).MidiWriter) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/midi-writer-js@2.0.5/build/index.js';
-    script.onload = () => {
-      if ((window as any).MidiWriter) {
-        console.log('✅ MIDI Writer loaded!');
-        resolve();
-      } else {
-        reject(new Error('Script loaded but MIDI Writer not found on window.'));
-      }
-    };
-    script.onerror = () => reject(new Error('Failed to load MIDI Writer library.'));
-    document.head.appendChild(script);
-  });
-}
-
-/**
- * Creates a MIDI file with structure markers
- */
 export function createMidiFile(result: AnalysisResult, filename: string): Blob {
-  const MidiWriter = (window as any).MidiWriter;
-  if (!MidiWriter) {
-    throw new Error('MIDI Writer library not loaded');
-  }
-
   const track = new MidiWriter.Track();
   track.setTempo(result.tempo);
   track.setTimeSignature(4, 4);
@@ -65,9 +34,9 @@ export function createMidiFile(result: AnalysisResult, filename: string): Blob {
     }));
   });
 
-  // Add final marker
   const last = result.structure[result.structure.length - 1];
   const endTicks = Math.round(last.end_time * ticksPerSecond);
+
   track.addEvent(new MidiWriter.MetaEvent({
     type: 'marker',
     data: `End (${formatTime(last.end_time)})`,
@@ -77,12 +46,10 @@ export function createMidiFile(result: AnalysisResult, filename: string): Blob {
   const write = new MidiWriter.Writer(track);
   const midiData = write.buildFile();
   const uint8Array = new Uint8Array(midiData);
+
   return new Blob([uint8Array], { type: 'audio/midi' });
 }
 
-/**
- * Triggers the download of the MIDI file
- */
 export function downloadMidiFile(result: AnalysisResult, originalFilename: string): void {
   try {
     const midiBlob = createMidiFile(result, originalFilename);
@@ -102,9 +69,6 @@ export function downloadMidiFile(result: AnalysisResult, originalFilename: strin
   }
 }
 
-/**
- * Format time in MM:SS
- */
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
