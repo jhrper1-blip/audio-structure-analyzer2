@@ -118,26 +118,7 @@ function App() {
           onDragLeave={handleDragLeave}
         />
 
-        {selectedFile && (
-          <div className="text-center mt-6">
-            <button
-              onClick={analyzeAudio}
-              disabled={isAnalyzing}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
-            >
-              {isAnalyzing ? (
-                <>
-                  <span className="animate-spin w-4 h-4 rounded-full border-2 border-white border-t-transparent" />
-                  <span>Analyzing...</span>
-                </>
-              ) : (
-                <>
-                  <span>Analyze Structure</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
+   
 
         {result && (
           <AnalysisResults
