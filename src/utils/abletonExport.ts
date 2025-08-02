@@ -3,73 +3,53 @@ import { saveAs } from 'file-saver';
 import MidiWriter from 'midi-writer-js';
 import type { AnalysisResult } from './midiExport';
 
-/**
- * Create a simple MIDI clip with a basic note pattern.
- */
-function createTrackMidi(trackName: string): Uint8Array {
-  const track = new MidiWriter.Track();
-  track.setTempo(120);
-  track.setTimeSignature(4, 4);
-
-  let events = [];
-
-  switch (trackName) {
-    case 'Drums':
-      events = [
-        new MidiWriter.NoteEvent({ pitch: ['C2'], duration: '4' }),
-        new MidiWriter.NoteEvent({ pitch: ['C2'], duration: '4' }),
-        new MidiWriter.NoteEvent({ pitch: ['C2'], duration: '4' }),
-        new MidiWriter.NoteEvent({ pitch: ['C2'], duration: '4' }),
-      ];
-      break;
-    case 'Bass':
-      events = [
-        new MidiWriter.NoteEvent({ pitch: ['E2'], duration: '1' }),
-        new MidiWriter.NoteEvent({ pitch: ['G2'], duration: '1' }),
-        new MidiWriter.NoteEvent({ pitch: ['A2'], duration: '1' }),
-      ];
-      break;
-    case 'Synth':
-      events = [
-        new MidiWriter.NoteEvent({ pitch: ['C4', 'E4', 'G4'], duration: '1' }),
-        new MidiWriter.NoteEvent({ pitch: ['F4', 'A4', 'C5'], duration: '1' }),
-      ];
-      break;
-    default:
-      events = [
-        new MidiWriter.NoteEvent({ pitch: ['C4'], duration: '1' }),
-      ];
-  }
-
-  events.forEach(event => track.addEvent(event));
-
-  const write = new MidiWriter.Writer([track]);
-  return new Uint8Array(write.buildFile());
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-/**
- * Main export function for Ableton template-style zip.
- */
-export async function exportAbletonTemplateZip(result: AnalysisResult, originalFilename: string) {
+function generateStructureMarkerMIDI(result: AnalysisResult): Uint8Array {
+  const track = new MidiWriter.Track();
+  const ticksPerSecond = (480 * result.tempo) / 60;
+
+  result.structure.forEach((section, index) => {
+    const startTicks = Math.round(section.start_time * ticksPerSecond);
+
+    track.addEvent(new MidiWriter.MetaEvent({
+      type: 'marker',
+      data: `${section.label} (${formatTime(section.start_time)})`,
+      tick: startTicks
+    }));
+
+    track.addEvent(new MidiWriter.MetaEvent({
+      type: 'text',
+      data: `Section ${index + 1}: ${section.label}`,
+      tick: startTicks
+    }));
+  });
+
+  const write = new MidiWriter.Writer(track);
+  const midiData = write.buildFile();
+  return new Uint8Array(midiData);
+}
+
+export async function exportAbletonTemplateZip(result: AnalysisResult, filename: string) {
   const zip = new JSZip();
+  const baseName = filename.replace(/\.[^/.]+$/, '');
 
-  // Add structure markers
-  const structure = result.structure.map(
-    (s, i) =>
-      `${i + 1}. ${s.label}: ${s.start_time.toFixed(2)}s - ${s.end_time.toFixed(2)}s`
-  ).join('\n');
-  zip.file('structure_markers.txt', structure);
+  // Generate the structure marker MIDI file
+  const markerMidi = generateStructureMarkerMIDI(result);
+  zip.file(`${baseName}_structure_markers.mid`, markerMidi, { binary: true });
 
-  // Generate simple MIDI files for each virtual instrument
-  const tracks = ['Drums', 'Bass', 'Synth'];
+  // Simulate placeholder tracks
+  const dummyMidi = new Uint8Array([77, 84, 104, 100, 0, 0, 0, 6]); // 'MThd' header chunk
 
-  for (const track of tracks) {
-    const midiData = createTrackMidi(track);
-    zip.file(`${track}.mid`, midiData);
-  }
+  zip.file('drums.mid', dummyMidi);
+  zip.file('bass.mid', dummyMidi);
+  zip.file('keys.mid', dummyMidi);
+  zip.file('synth.mid', dummyMidi);
 
-  // Build and download the zip
-  const zipBlob = await zip.generateAsync({ type: 'blob' });
-  const baseName = originalFilename.replace(/\.[^/.]+$/, '');
-  saveAs(zipBlob, `${baseName}_ableton_template.zip`);
+  const content = await zip.generateAsync({ type: 'blob' });
+  saveAs(content, `${baseName}_ableton_template.zip`);
 }
