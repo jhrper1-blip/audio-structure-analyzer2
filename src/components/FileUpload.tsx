@@ -100,7 +100,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Analyzing...</span>
               </>
-            ) : (
+
           
       )}
     </div>
