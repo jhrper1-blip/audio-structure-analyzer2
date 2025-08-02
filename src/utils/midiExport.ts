@@ -21,27 +21,21 @@ export function createMidiFile(result: AnalysisResult, filename: string): Blob {
   result.structure.forEach((section, index) => {
     const startTicks = Math.round(section.start_time * ticksPerSecond);
 
-    track.addEvent(new MidiWriter.MetaEvent({
-      type: 'marker',
-      data: `${section.label} (${formatTime(section.start_time)})`,
-      tick: startTicks
-    }));
+    track.addMarker(
+      `${section.label} (${formatTime(section.start_time)})`,
+      { tick: startTicks }
+    );
 
-    track.addEvent(new MidiWriter.MetaEvent({
-      type: 'text',
-      data: `Section ${index + 1}: ${section.label} - Duration: ${formatTime(section.end_time - section.start_time)}`,
-      tick: startTicks
-    }));
+    track.addText(
+      `Section ${index + 1}: ${section.label} - Duration: ${formatTime(section.end_time - section.start_time)}`,
+      { tick: startTicks }
+    );
   });
 
   const last = result.structure[result.structure.length - 1];
   const endTicks = Math.round(last.end_time * ticksPerSecond);
 
-  track.addEvent(new MidiWriter.MetaEvent({
-    type: 'marker',
-    data: `End (${formatTime(last.end_time)})`,
-    tick: endTicks
-  }));
+  track.addMarker(`End (${formatTime(last.end_time)})`, { tick: endTicks });
 
   const write = new MidiWriter.Writer(track);
   const midiData = write.buildFile();
