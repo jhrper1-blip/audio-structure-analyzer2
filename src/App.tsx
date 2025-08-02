@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import AnalysisResults from './components/AnalysisResults';
 import InfoBanner from './components/InfoBanner';
 import { downloadMidiFile } from './utils/midiExport';
+
 import type { AnalysisResult } from './types';
 
 function App() {
@@ -24,31 +25,31 @@ function App() {
     }
   }, []);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  };
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  }, [handleFileSelect]);
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       handleFileSelect(files[0]);
     }
-  };
+  }, [handleFileSelect]);
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  }, []);
 
   const analyzeAudio = async () => {
     if (!selectedFile) return;
@@ -57,10 +58,8 @@ function App() {
     setError(null);
 
     try {
-      // Simulated processing delay
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated delay
 
-      // Simulated analysis output
       const mockResult: AnalysisResult = {
         tempo: Math.floor(Math.random() * 60) + 100,
         structure: [
@@ -113,14 +112,32 @@ function App() {
           selectedFile={selectedFile}
           error={error}
           dragActive={dragActive}
-          onFileSelect={handleFileSelect}
+          onFileInput={handleFileInput}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onFileInput={handleFileInput}
-          onAnalyze={analyzeAudio}
-          isAnalyzing={isAnalyzing}
         />
+
+        {selectedFile && (
+          <div className="text-center mt-6">
+            <button
+              onClick={analyzeAudio}
+              disabled={isAnalyzing}
+              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
+            >
+              {isAnalyzing ? (
+                <>
+                  <span className="animate-spin w-4 h-4 rounded-full border-2 border-white border-t-transparent" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <span>Analyze Structure</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {result && (
           <AnalysisResults
