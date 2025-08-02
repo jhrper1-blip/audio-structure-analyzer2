@@ -1,49 +1,41 @@
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-import { createMidiTemplate } from './midiExport';
-import type { AnalysisResult } from './midiExport';
+import { createMidiTemplate, AnalysisResult } from './midiExport';
 
 /**
- * Generate multiple instrument MIDI blobs based on the song structure
+ * Simulated instrument groups — these can be improved later using real audio analysis
  */
-function generateInstrumentTracks(result: AnalysisResult): Record<string, Blob> {
-  const instruments = ['Drums', 'Bass', 'Keys', 'Synth', 'FX'];
-
-  const blobs: Record<string, Blob> = {};
-
-  instruments.forEach((instrument) => {
-    const midiBlob = createMidiTemplate(result, instrument);
-    blobs[`${instrument}_Markers.mid`] = midiBlob;
-  });
-
-  return blobs;
-}
+const INSTRUMENTS = ['Drums', 'Bass', 'Synth', 'Pads', 'FX'];
 
 /**
- * Export a structured Ableton-style project template ZIP
+ * Generates and downloads a zip file containing MIDI files for different instrument tracks
  */
 export async function exportAbletonTemplateZip(result: AnalysisResult, originalFilename: string): Promise<void> {
   try {
     const zip = new JSZip();
-
-    // Add instrument marker MIDI files
-    const midiFiles = generateInstrumentTracks(result);
-    Object.entries(midiFiles).forEach(([filename, blob]) => {
-      zip.file(`midi/${filename}`, blob);
-    });
-
-    // Add a readme or project info
     const baseName = originalFilename.replace(/\.[^/.]+$/, '');
-    zip.file('README.txt', `Ableton Template for: ${baseName}\n\nIncludes tempo and section markers for each instrument track.\nTempo: ${result.tempo} BPM\nSections:\n${result.structure.map(s => `- ${s.label} (${s.start_time}s to ${s.end_time}s)`).join('\n')}`);
 
-    // Generate ZIP
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    for (const instrument of INSTRUMENTS) {
+      const midiBlob = createMidiTemplate(result, instrument);
+      zip.file(`${instrument}.mid`, midiBlob);
+    }
 
-    // Trigger download
-    const filename = `${baseName}_Ableton_Template.zip`;
-    saveAs(zipBlob, filename);
-  } catch (error) {
-    console.error('❌ Failed to export Ableton template:', error);
+    // Also include the structure markers as a separate file
+    const structureBlob = createMidiTemplate(result);
+    zip.file(`Structure_Markers.mid`, structureBlob);
+
+    const content = await zip.generateAsync({ type: 'blob' });
+
+    const url = URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${baseName}_ableton_template.zip`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('❌ Failed to create Ableton template zip:', err);
     throw new Error('Failed to export Ableton template.');
   }
 }
