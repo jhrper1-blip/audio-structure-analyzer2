@@ -109,14 +109,16 @@ function App() {
         </header>
 
         <FileUpload
-          selectedFile={selectedFile}
-          error={error}
-          dragActive={dragActive}
-          onFileInput={handleFileInput}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        />
+  selectedFile={selectedFile}
+  dragActive={dragActive}
+  error={error}
+  onDragOver={handleDragOver}
+  onDragLeave={handleDragLeave}
+  onDrop={handleDrop}
+  onFileInput={handleFileInput}
+  onAnalyze={analyzeAudio}
+  isAnalyzing={isAnalyzing}
+/>
 
    
 
