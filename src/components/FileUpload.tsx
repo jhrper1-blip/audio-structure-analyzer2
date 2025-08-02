@@ -1,34 +1,32 @@
 import React from 'react';
-import { Upload, FileAudio, AlertCircle, Loader2, Music } from 'lucide-react';
+import { Upload, FileAudio, AlertCircle, Music, Loader2 } from 'lucide-react';
 
 interface FileUploadProps {
   selectedFile: File | null;
   dragActive: boolean;
   error: string | null;
-  isAnalyzing: boolean;
-  onFileSelect: (file: File) => void;
-  onFileInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
+  onFileInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAnalyze: () => void;
+  isAnalyzing: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
   selectedFile,
   dragActive,
   error,
-  isAnalyzing,
-  onFileSelect,
-  onFileInput,
   onDragOver,
   onDragLeave,
   onDrop,
-  onAnalyze
+  onFileInput,
+  onAnalyze,
+  isAnalyzing
 }) => {
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 mb-8 border border-white/20 shadow-2xl">
-      {/* Drag and Drop Zone */}
+      {/* Drag & Drop Upload */}
       <div
         className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 cursor-pointer ${
           dragActive
@@ -70,7 +68,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
           )}
         </div>
 
-        {/* Hidden file input */}
         <input
           type="file"
           accept=".mp3,.wav,audio/mp3,audio/wav,audio/mpeg"
@@ -79,7 +76,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         />
       </div>
 
-      {/* Error display */}
+      {/* Error Message */}
       {error && (
         <div className="mt-6 flex items-center space-x-3 text-red-400 bg-red-400/10 rounded-xl p-4 border border-red-400/20">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -98,10 +95,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {isAnalyzing ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Analyzing...</span>
+                <span>Analyzing Audio...</span>
               </>
-
-          
+            ) : (
+              <>
+                <Music className="w-5 h-5" />
+                <span>Analyze Structure</span>
+              </>
+            )}
+          </button>
+        </div>
       )}
     </div>
   );
