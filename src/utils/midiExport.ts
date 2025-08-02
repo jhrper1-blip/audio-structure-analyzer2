@@ -1,6 +1,8 @@
 import MidiWriter from 'midi-writer-js';
 import JSZip from 'jszip';
 
+// -------------------- Types --------------------
+
 export interface StructureSection {
   label: string;
   start_time: number;
@@ -12,13 +14,9 @@ export interface AnalysisResult {
   structure: StructureSection[];
 }
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
+// -------------------- Basic MIDI Export --------------------
 
-function createMarkerTrack(result: AnalysisResult): Uint8Array {
+export function createMidiFile(result: AnalysisResult): Blob {
   const track = new MidiWriter.Track();
   track.setTempo(result.tempo);
   track.setTimeSignature(4, 4);
@@ -28,65 +26,103 @@ function createMarkerTrack(result: AnalysisResult): Uint8Array {
   result.structure.forEach((section, index) => {
     const startTicks = Math.round(section.start_time * ticksPerSecond);
 
-    track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 1 }));
-    track.addEvent(new MidiWriter.MetaEvent({
+    track.addEvent(
+      new MidiWriter.MetaEvent({
+        type: 'marker',
+        data: `${section.label} (${formatTime(section.start_time)})`,
+        tick: startTicks,
+      })
+    );
+
+    track.addEvent(
+      new MidiWriter.MetaEvent({
+        type: 'text',
+        data: `Section ${index + 1}: ${section.label} - Duration: ${formatTime(
+          section.end_time - section.start_time
+        )}`,
+        tick: startTicks,
+      })
+    );
+  });
+
+  const last = result.structure[result.structure.length - 1];
+  const endTicks = Math.round(last.end_time * ticksPerSecond);
+
+  track.addEvent(
+    new MidiWriter.MetaEvent({
       type: 'marker',
-      data: `${section.label} (${formatTime(section.start_time)})`,
-      tick: startTicks
-    }));
-  });
+      data: `End (${formatTime(last.end_time)})`,
+      tick: endTicks,
+    })
+  );
 
-  const writer = new MidiWriter.Writer([track]);
-  return new Uint8Array(writer.buildFile());
+  const write = new MidiWriter.Writer(track);
+  const midiData = write.buildFile();
+  const uint8Array = new Uint8Array(midiData);
+
+  return new Blob([uint8Array], { type: 'audio/midi' });
 }
 
-function createInstrumentTrack(instrument: string, tempo: number): Uint8Array {
-  const track = new MidiWriter.Track();
-  track.setTempo(tempo);
-  track.setTimeSignature(4, 4);
-
-  const note = new MidiWriter.NoteEvent({
-    pitch: ['C4'],
-    duration: '1',
-    repeat: 4,
-    velocity: 50
-  });
-
-  track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 1 }));
-  track.addEvent(note, function(event, index) {
-    return { sequential: true };
-  });
-
-  const writer = new MidiWriter.Writer([track]);
-  return new Uint8Array(writer.buildFile());
-}
-
-export async function exportAbletonTemplateZip(result: AnalysisResult, originalFilename: string): Promise<void> {
+export function downloadMidiFile(result: AnalysisResult, originalFilename: string): void {
   try {
-    const zip = new JSZip();
-
-    // Create folders and files inside the zip
-    zip.file('README.txt', 'This zip contains MIDI tracks and markers for your Ableton template.');
-
-    zip.folder('markers')?.file('structure_markers.mid', createMarkerTrack(result));
-    zip.folder('tracks')?.file('drums.mid', createInstrumentTrack('drums', result.tempo));
-    zip.folder('tracks')?.file('bass.mid', createInstrumentTrack('bass', result.tempo));
-    zip.folder('tracks')?.file('synth.mid', createInstrumentTrack('synth', result.tempo));
-    zip.folder('tracks')?.file('keys.mid', createInstrumentTrack('keys', result.tempo));
-
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(blob);
+    const midiBlob = createMidiFile(result);
+    const url = URL.createObjectURL(midiBlob);
+    const link = document.createElement('a');
 
     const baseName = originalFilename.replace(/\.[^/.]+$/, '');
-    const link = document.createElement('a');
     link.href = url;
-    link.download = `${baseName}_ableton_template.zip`;
+    link.download = `${baseName}_structure_markers.mid`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('❌ Failed to create Ableton ZIP:', err);
-    throw new Error('Could not export Ableton project ZIP.');
+  } catch (error) {
+    console.error('❌ MIDI export failed:', error);
+    throw new Error('Failed to export MIDI file. Please try again.');
   }
+}
+
+// -------------------- Ableton Template ZIP Export --------------------
+
+export async function exportAbletonTemplateZip(result: AnalysisResult, filename: string): Promise<void> {
+  const zip = new JSZip();
+  const baseName = filename.replace(/\.[^/.]+$/, '');
+  const folder = zip.folder(baseName) || zip;
+
+  // Add structure markers MIDI file
+  const midiBlob = createMidiFile(result);
+  folder.file('structure_markers.mid', midiBlob);
+
+  // Add dummy instrument placeholder MIDI files
+  const instruments = ['Drums', 'Bass', 'Synth', 'Keys', 'FX'];
+  instruments.forEach((name) => {
+    const track = new MidiWriter.Track();
+    track.setTempo(result.tempo);
+    const dummyNote = new MidiWriter.NoteEvent({
+      pitch: ['C4'],
+      duration: '4',
+    });
+    track.addEvent(dummyNote);
+    const writer = new MidiWriter.Writer([track]);
+    folder.file(`${name}.mid`, writer.buildFile());
+  });
+
+  // Create and trigger download
+  const content = await zip.generateAsync({ type: 'blob' });
+  const zipUrl = URL.createObjectURL(content);
+  const link = document.createElement('a');
+  link.href = zipUrl;
+  link.download = `${baseName}_ableton_template.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(zipUrl);
+}
+
+// -------------------- Helpers --------------------
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
