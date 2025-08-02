@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, List, Loader2, Download } from 'lucide-react';
+import { Clock, List, Loader2, Download, Package } from 'lucide-react';
 
 interface StructureSection {
   label: string;
@@ -15,13 +15,19 @@ interface AnalysisResult {
 interface AnalysisResultsProps {
   result: AnalysisResult;
   isExporting: boolean;
+  midiLibLoaded: boolean;
   onExport: () => void;
+  onExportAbleton: () => void;
+  isExportingAbleton: boolean;
 }
 
 const AnalysisResults: React.FC<AnalysisResultsProps> = ({
   result,
   isExporting,
-  onExport
+  midiLibLoaded,
+  onExport,
+  onExportAbleton,
+  isExportingAbleton
 }) => {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -31,7 +37,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
           <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl">
@@ -40,39 +45,47 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <span>Analysis Results</span>
         </h2>
 
-        <button
-          onClick={onExport}
-          disabled={isExporting}
-          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed flex items-center space-x-2"
-        >
-          {isExporting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Exporting...</span>
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4" />
-              <span>Export MIDI</span>
-            </>
-          )}
-        </button>
+        {midiLibLoaded && (
+          <div className="flex gap-3">
+            <button
+              onClick={onExport}
+              disabled={isExporting}
+              className="px-5 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Exporting...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Export MIDI</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onExportAbleton}
+              disabled={isExportingAbleton}
+              className="px-5 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {isExportingAbleton ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Packaging...</span>
+                </>
+              ) : (
+                <>
+                  <Package className="w-4 h-4" />
+                  <span>Export Ableton Template</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Export Notice */}
-      <div className="mb-6 bg-purple-500/10 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20">
-        <div className="flex items-start space-x-3">
-          <div className="p-1 bg-purple-500 rounded-lg flex-shrink-0">
-            <Download className="w-4 h-4 text-white" />
-          </div>
-          <div className="text-sm text-purple-200">
-            <p className="font-semibold mb-1">MIDI Export Available</p>
-            <p>Download structural markers as a MIDI file for use in your DAW or music software.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tempo Display */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-2xl p-6 border border-orange-500/30">
           <div className="flex items-center space-x-4">
@@ -87,7 +100,6 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         </div>
       </div>
 
-      {/* Song Structure Sections */}
       <div>
         <h3 className="text-xl font-semibold text-white mb-6 flex items-center space-x-2">
           <span>Song Structure</span>
