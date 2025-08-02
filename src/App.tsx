@@ -15,10 +15,15 @@ function App() {
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
-    loadMidiWriter()
-      .then(() => setMidiLibLoaded(true))
-      .catch(() => console.warn('MIDI export functionality unavailable'));
-  }, []);
+  loadMidiWriter()
+    .then(() => {
+      setMidiLibLoaded(true);
+      console.log('✅ MIDI Writer loaded!');
+    })
+    .catch((err) => {
+      console.warn('❌ MIDI export unavailable:', err);
+    });
+}, []);
 
   const handleFileSelect = useCallback((file: File) => {
     const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg'];
