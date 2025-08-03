@@ -5,8 +5,8 @@ import InfoBanner from './components/InfoBanner';
 import { downloadMidiFile } from './utils/midiExport';
 import { exportAbletonTemplateZip } from './utils/abletonExport';
 import type { AnalysisResult } from './types';
-import logo from './assets/strooq-logo-dark.png';
-import logo from './assets/strooq-logo-light.png'; // ensure correct path
+import darklogo from './assets/strooq-logo-dark.png';
+import lightlogo from './assets/strooq-logo-light.png'; // ensure correct path
 
 function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
