@@ -172,6 +172,7 @@ function App() {
       </div>
     </div>
   );
+       const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null); 
 }
 
 export default App;
