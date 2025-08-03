@@ -2,13 +2,12 @@ import React, { useState, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import AnalysisResults from './components/AnalysisResults';
 import InfoBanner from './components/InfoBanner';
+import Toast from './components/Toast';
+import { Loader2 } from 'lucide-react';
 import { downloadMidiFile } from './utils/midiExport';
 import { exportAbletonTemplateZip } from './utils/abletonExport';
-import { Loader2 } from 'lucide-react';
-import Toast from './components/Toast';
 import type { AnalysisResult } from './types';
 import darkLogo from './assets/strooq-logo-dark.png';
-import lightLogo from './assets/strooq-logo-light.png'; // ensure correct path
 
 function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -18,6 +17,7 @@ function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingAbleton, setIsExportingAbleton] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const handleFileSelect = useCallback((file: File) => {
     const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg'];
@@ -85,8 +85,9 @@ function App() {
     setIsExporting(true);
     try {
       await downloadMidiFile(result, selectedFile.name);
+      setToast({ message: 'MIDI exported successfully!', type: 'success' });
     } catch {
-      setError('Failed to export MIDI file.');
+      setToast({ message: 'Failed to export MIDI file.', type: 'error' });
     } finally {
       setIsExporting(false);
     }
@@ -97,26 +98,32 @@ function App() {
     setIsExportingAbleton(true);
     try {
       await exportAbletonTemplateZip(result, selectedFile.name);
+      setToast({ message: 'Ableton template exported!', type: 'success' });
     } catch {
-      setError('Failed to export Ableton template.');
+      setToast({ message: 'Failed to export Ableton template.', type: 'error' });
     } finally {
       setIsExportingAbleton(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0C0C0C] via-[#111111] to-[#1A1A1A]">
-      <div className="absolute inset-0 opacity-40 bg-[url('data:image/svg+xml;base64,...')]" />
+    <div className="min-h-screen bg-zinc-950 text-white">
+      {/* Overlay Spinner */}
+      {isAnalyzing && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 text-white animate-spin" />
+        </div>
+      )}
+
       <div className="relative z-10 container mx-auto px-4 py-8">
-        
         {/* Logo + Tagline */}
-        <header className="flex flex-col items-center justify-center mb-12">
+        <header className="flex flex-col items-center justify-center mb-10">
           <img
             src={darkLogo}
             alt="Strooq logo"
             className="h-24 md:h-28 object-contain mb-4"
           />
-          <p className="text-base text-slate-400 max-w-2xl mx-auto leading-relaxed text-center">
+          <p className="text-base text-slate-400 max-w-xl mx-auto text-center italic font-light">
             Let your music show its shape.
           </p>
         </header>
@@ -139,11 +146,11 @@ function App() {
             <button
               onClick={analyzeAudio}
               disabled={isAnalyzing}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
+              className="px-8 py-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
             >
               {isAnalyzing ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin mr-2 text-white" />
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   <span>Analyzing...</span>
                 </>
               ) : (
@@ -170,9 +177,17 @@ function App() {
 
         <InfoBanner />
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
-       const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null); 
 }
 
 export default App;
