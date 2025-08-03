@@ -3,7 +3,9 @@ import FileUpload from './components/FileUpload';
 import AnalysisResults from './components/AnalysisResults';
 import InfoBanner from './components/InfoBanner';
 import { downloadMidiFile } from './utils/midiExport';
-import { exportAbletonTemplateZip } from './utils/abletonExport'; // This will be your new utility
+import { exportAbletonTemplateZip } from './utils/abletonExport';
+import logoLight from './assets/strooq-logo-light.png';
+import logoDark from './assets/strooq-logo-dark.png';
 
 import type { AnalysisResult } from './types';
 
@@ -56,7 +58,6 @@ function App() {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate delay
-
       const mockResult: AnalysisResult = {
         tempo: Math.floor(Math.random() * 60) + 100,
         structure: [
@@ -68,7 +69,6 @@ function App() {
           { label: 'Outro', start_time: 137.8, end_time: 168.5 }
         ]
       };
-
       setResult(mockResult);
     } catch {
       setError('Analysis failed. Please try again.');
@@ -102,18 +102,35 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800">
-      <div className="absolute inset-0 opacity-40 bg-[url('data:image/svg+xml;base64,...')]" />
+    <div className="min-h-screen bg-strooq-bg text-strooq-light">
+      <div className="absolute inset-0 opacity-30 bg-[url('data:image/svg+xml;base64,...')]" />
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
-            Audio Structure Analyzer
+        
+        {/* Logo + Branding */}
+        <div className="flex justify-center mb-6">
+          <img
+            src={logoLight}
+            alt="Strooq Logo Light"
+            className="h-12 dark:hidden block"
+          />
+          <img
+            src={logoDark}
+            alt="Strooq Logo Dark"
+            className="h-12 hidden dark:block"
+          />
+        </div>
+
+        {/* Header */}
+        <header className="text-center mb-10">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-strooq-primary to-strooq-accent bg-clip-text text-transparent">
+            Welcome to Strooq
           </h1>
-          <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Upload your MP3 or WAV files to analyze tempo and detect song structure.
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+            Upload an MP3 or WAV to detect tempo, structure, and export as MIDI or Ableton templates.
           </p>
         </header>
 
+        {/* File Upload */}
         <FileUpload
           selectedFile={selectedFile}
           dragActive={dragActive}
@@ -125,12 +142,13 @@ function App() {
           onDrop={handleDrop}
         />
 
+        {/* Analyze Button */}
         {selectedFile && (
           <div className="text-center mt-6">
             <button
               onClick={analyzeAudio}
               disabled={isAnalyzing}
-              className="px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
+              className="px-8 py-4 bg-strooq-primary hover:bg-strooq-accent text-white font-semibold rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-3 mx-auto"
             >
               {isAnalyzing ? (
                 <>
@@ -147,6 +165,7 @@ function App() {
           </div>
         )}
 
+        {/* Results + Export */}
         {result && (
           <AnalysisResults
             result={result}
