@@ -61,7 +61,7 @@ function App() {
   formData.append("file", selectedFile);
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/analyze", {
+    const response = await fetch('http://192.168.1.239:8000/analyze', {
   method: "POST",
   body: formData,
 });
