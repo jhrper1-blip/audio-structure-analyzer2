@@ -103,7 +103,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0C0C0C] via-[#111111] to-[#1A1A1A]">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#121212] to-[#1C1C1C]">
       <div className="absolute inset-0 opacity-40 bg-[url('data:image/svg+xml;base64,...')]" />
       <div className="relative z-10 container mx-auto px-4 py-8">
         
