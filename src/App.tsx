@@ -5,8 +5,8 @@ import InfoBanner from './components/InfoBanner';
 import { downloadMidiFile } from './utils/midiExport';
 import { exportAbletonTemplateZip } from './utils/abletonExport';
 import type { AnalysisResult } from './types';
-import darklogo from './assets/strooq-logo-dark.png';
-import lightlogo from './assets/strooq-logo-light.png'; // ensure correct path
+import darkLogo from './assets/strooq-logo-dark.png';
+import lightLogo from './assets/strooq-logo-light.png'; // ensure correct path
 
 function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -110,7 +110,7 @@ function App() {
         {/* Logo + Tagline */}
         <header className="flex flex-col items-center justify-center mb-12">
           <img
-            src={darklogo}
+            src={darkLogo}
             alt="Strooq logo"
             className="h-24 md:h-28 object-contain mb-4"
           />
