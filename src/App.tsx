@@ -53,30 +53,28 @@ function App() {
   };
 
   const analyzeAudio = async () => {
-    if (!selectedFile) return;
-    setIsAnalyzing(true);
-    setError(null);
+  if (!selectedFile) return;
+  setIsAnalyzing(true);
+  setError(null);
 
-    try {
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulated delay
+  const formData = new FormData();
+  formData.append("file", selectedFile);
 
-      const mockResult: AnalysisResult = {
-        tempo: Math.floor(Math.random() * 60) + 100,
-        structure: [
-          { label: 'Intro', start_time: 0, end_time: 15.2 },
-          { label: 'Verse 1', start_time: 15.2, end_time: 45.8 },
-          { label: 'Chorus', start_time: 45.8, end_time: 76.4 },
-          { label: 'Verse 2', start_time: 76.4, end_time: 107.1 },
-          { label: 'Chorus', start_time: 107.1, end_time: 137.8 },
-          { label: 'Outro', start_time: 137.8, end_time: 168.5 }
-        ]
-      };
+  try {
+    const response = await fetch("http://127.0.0.1:8000/analyze", {
+      method: "POST",
+      body: formData
+    });
 
-      setResult(mockResult);
-    } catch {
-      setError('Analysis failed. Please try again.');
-    } finally {
-      setIsAnalyzing(false);
+    if (!response.ok) throw new Error("Server returned an error");
+
+    const data = await response.json();
+    setResult(data);
+  } catch (err) {
+    console.error("Analysis failed", err);
+    setError("Analysis failed. Please try again.");
+  } finally {
+    setIsAnalyzing(false);
     }
   };
 
