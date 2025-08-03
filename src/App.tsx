@@ -142,7 +142,7 @@ function App() {
             >
               {isAnalyzing ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <Loader2 className="w-5 h-5 animate-spin mr-2 text-white" />
                   <span>Analyzing...</span>
                 </>
               ) : (
