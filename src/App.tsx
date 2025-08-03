@@ -110,7 +110,7 @@ function App() {
         {/* Logo + Tagline */}
         <header className="flex flex-col items-center justify-center mb-12">
           <img
-            src={logo}
+            src={darklogo}
             alt="Strooq logo"
             className="h-24 md:h-28 object-contain mb-4"
           />
