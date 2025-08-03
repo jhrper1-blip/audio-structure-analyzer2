@@ -114,10 +114,9 @@ function App() {
             alt="Strooq logo"
             className="h-24 md:h-28 object-contain mb-4"
           />
-          <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed text-center">
-            Upload your MP3 or WAV files to analyze tempo and detect song structure.
-          </p>
-        </header>
+          <p className="text-base text-slate-400 max-w-2xl mx-auto leading-relaxed text-center">
+  Upload your MP3 or WAV files to analyze tempo and detect song structure.
+</p>
 
         {/* File Upload */}
         <FileUpload
