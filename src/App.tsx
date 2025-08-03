@@ -5,6 +5,7 @@ import InfoBanner from './components/InfoBanner';
 import { downloadMidiFile } from './utils/midiExport';
 import { exportAbletonTemplateZip } from './utils/abletonExport';
 import { Loader2 } from 'lucide-react';
+import Toast from './components/Toast';
 import type { AnalysisResult } from './types';
 import darkLogo from './assets/strooq-logo-dark.png';
 import lightLogo from './assets/strooq-logo-light.png'; // ensure correct path
