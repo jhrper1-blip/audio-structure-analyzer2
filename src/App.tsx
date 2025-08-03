@@ -141,7 +141,7 @@ function App() {
             >
               {isAnalyzing ? (
                 <>
-                  <span className="animate-spin mr-2">⏳</span>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2 text-white" />
                   <span>Analyzing...</span>
                 </>
               ) : (
