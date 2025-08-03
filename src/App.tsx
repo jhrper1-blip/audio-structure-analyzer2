@@ -121,14 +121,16 @@ function App() {
         </div>
 
         {/* Header */}
-        <header className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-strooq-primary to-strooq-accent bg-clip-text text-transparent">
-            Welcome to Strooq
-          </h1>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Upload an MP3 or WAV to detect tempo, structure, and export as MIDI or Ableton templates.
-          </p>
-        </header>
+       <header className="flex flex-col items-center justify-center mb-12">
+  <img
+    src={logo}
+    alt="Strooq logo"
+    className="h-24 md:h-28 object-contain mb-4"
+  />
+  <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed text-center">
+    Upload your MP3 or WAV files to analyze tempo and detect song structure.
+  </p>
+</header>
 
         {/* File Upload */}
         <FileUpload
