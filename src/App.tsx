@@ -115,7 +115,7 @@ function App() {
             className="h-24 md:h-28 object-contain mb-4"
           />
           <p className="text-sm md:text-base text-slate-400 italic tracking-wide max-w-xl mx-auto text-center mt-2">
-            Upload your MP3 or WAV files to analyze tempo and detect song structure.
+            Let your music show its shape.
           </p>
         </header>
 
