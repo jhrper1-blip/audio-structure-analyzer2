@@ -6,7 +6,7 @@ import Toast from './components/Toast';
 import { Loader2 } from 'lucide-react';
 import { downloadMidiFile } from './utils/midiExport';
 import { exportAbletonTemplateZip } from './utils/abletonExport';
-import type { AnalysisResult } from './types';
+import type { AnalysisResult } from './utils/midiExport';
 import darkLogo from './assets/strooq-logo-dark.png';
 
 function App() {
